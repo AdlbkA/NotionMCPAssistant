@@ -1,150 +1,155 @@
 # NotionMCP
 
-RAG (Retrieval Augmented Generation) система для взаимодействия с Notion через Model Context Protocol и Claude AI.
+RAG (Retrieval Augmented Generation) system for interacting with Notion via Model Context Protocol and Claude AI.
 
-## Описание
+## Overview
 
-NotionMCP — это интеграция Notion с LLM, которая позволяет:
-- Синхронизировать документы из Notion в векторную базу данных
-- Выполнять семантический поиск по индексированному контенту
-- Отвечать на вопросы с использованием контекста из Notion (RAG)
-- Взаимодействовать через REST API
+NotionMCP is an integration of Notion with LLM that enables:
+- Synchronize documents from Notion to a vector database
+- Perform semantic search on indexed content
+- Answer questions using context from Notion (RAG)
+- Interact via REST API
 
-Система использует Model Context Protocol (MCP) для безопасного подключения к Notion API и ChromaDB для хранения векторных эмбеддингов.
+The system uses Model Context Protocol (MCP) for secure connection to the Notion API and ChromaDB for storing vector embeddings.
 
-## Технологический стек
+## Tech Stack
 
-- **Python 3.13+** — основной язык
-- **FastAPI** — REST API сервер
-- **Anthropic Claude** — LLM для генерации ответов
-- **LlamaIndex** — фреймворк для индексирования и поиска
-- **ChromaDB** — векторная база данных
-- **Sentence Transformers** — генерирование эмбеддингов
-- **MCP (Model Context Protocol)** — интеграция с Notion
+- **Python 3.13+** — primary language
+- **FastAPI** — REST API server
+- **Anthropic Claude** — LLM for answer generation
+- **LlamaIndex** — indexing and search framework
+- **ChromaDB** — vector database
+- **Sentence Transformers** — embeddings generation
+- **MCP (Model Context Protocol)** — Notion integration
 
-## Структура проекта
+## Project Structure
 
 ```
 .
-├── api/                    # REST API endpoints
-│   └── main.py            # FastAPI приложение
-├── mcp_conf/              # MCP конфигурация и интеграция
-│   ├── notion_client.py   # Клиент для работы с Notion API через MCP
-│   └── sync.py            # Синхронизация Notion → RAG
-├── rag/                   # RAG (Retrieval Augmented Generation)
-│   ├── embeddings.py      # Модель для генерирования эмбеддингов
-│   ├── indexer.py         # Индексирование документов в ChromaDB
-│   └── retriever.py       # Семантический поиск
-├── agent/                 # AI агент
-│   ├── agent.py           # Основная логика агента с Claude
-│   └── prompts.py         # Системные промпты
-├── config/                # Конфигурация
-│   └── settings.py        # Параметры приложения из переменных окружения
-├── storage/               # Локальное хранилище
-│   └── chroma/           # БД ChromaDB
-├── pyproject.toml         # Зависимости проекта
-└── README.md             # Этот файл
+├── ai/                     # AI core modules
+│   ├── agent/             # AI agent implementation
+│   │   ├── agent.py       # Main agent logic with Claude
+│   │   ├── prompts.py     # System prompts
+│   │   └── tools.py       # Agent tools and utilities
+│   ├── mcp_conf/          # MCP configuration and integration
+│   │   ├── notion_client.py # Client for Notion API via MCP
+│   │   └── sync.py        # Notion → RAG synchronization
+│   └── rag/               # RAG (Retrieval Augmented Generation)
+│       ├── embeddings.py  # Embeddings generation model
+│       ├── indexer.py     # Document indexing to ChromaDB
+│       └── retriever.py   # Semantic search functionality
+├── src/                   # Main application source code
+│   ├── main.py            # Application entry point
+│   ├── di.py              # Dependency injection setup
+│   └── api/               # REST API layer
+│       └── read.py        # Read API endpoints
+├── config/                # Configuration management
+│   └── settings.py        # Application settings from environment variables
+├── storage/               # Data storage
+│   └── chroma/           # ChromaDB vector database
+├── Dockerfile             # Docker container configuration
+├── docker-compose.yml     # Docker Compose orchestration
+├── pyproject.toml         # Project dependencies and metadata
 ```
 
-## Установка
+## Installation
 
-### Предварительные требования
+### Prerequisites
 - Python 3.13+
-- Notion workspace с API token
+- Notion workspace with API token
 - Anthropic API key
 
-### Шаги установки
+### Installation Steps
 
-1. **Клонируйте репозиторий:**
+1. **Clone the repository:**
 ```bash
 git clone <repository-url>
 cd NotionMCP
 ```
 
-2. **Установите зависимости:**
+2. **Install dependencies:**
 ```bash
 uv sync
 ```
 
-Или альтернативно через pip:
+Or alternatively with pip:
 ```bash
 pip install -e .
 ```
 
-3. **Создайте файл `.env`:**
+3. **Create `.env` file:**
 ```bash
 NOTION_TOKEN=your_notion_api_token
 ANTHROPIC_API_KEY=your_anthropic_api_key
 CHROMA_PATH=./storage/chroma
 ```
 
-Как получить токены:
+How to get tokens:
 - **Notion Token**: https://www.notion.so/my-integrations
 - **Anthropic API Key**: https://console.anthropic.com/
 
-## Использование
+## Usage
 
-### Запуск сервера
+### Starting the Server
 
 ```bash
-cd api
-uvicorn main:app --reload
+uvicorn src.main:app --reload
 ```
 
-Сервер будет доступен на `http://localhost:8000`
+The server will be available at `http://localhost:8000`
 
 ### API Endpoints
 
-#### 1. Синхронизация документов из Notion
+#### 1. Document Synchronization from Notion
 ```bash
 POST /sync
 ```
 
-Загружает все документы из Notion в векторную БД для индексирования.
+Loads all documents from Notion into the vector database for indexing.
 
-**Пример:**
+**Example:**
 ```bash
 curl -X POST http://localhost:8000/sync
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {"status": "ok"}
 ```
 
-#### 2. Chat с RAG контекстом
+#### 2. Chat with RAG Context
 ```bash
 POST /chat
 ```
 
-Отправляет вопрос, получает ответ на основе контекста из Notion.
+Sends a question and receives an answer based on context from Notion.
 
-**Пример:**
+**Example:**
 ```bash
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Что такое MCP?"}'
+  -d '{"message": "What is MCP?"}'
 ```
 
-**Ответ:**
+**Response:**
 ```json
-{"response": "MCP (Model Context Protocol) — это протокол..."}
+{"response": "MCP (Model Context Protocol) is a protocol..."}
 ```
 
-## Архитектура
+## Architecture
 
-### Поток данных
+### Data Flow
 
-1. **Синхронизация (Sync)**
+1. **Synchronization (Sync)**
    ```
    Notion API (MCP) → NotionMCPClient
-   → Документы [id, title, content]
+   → Documents [id, title, content]
    → LlamaIndex: Document objects
    → Embeddings (Sentence Transformers)
    → ChromaDB (Persistent storage)
    ```
 
-2. **Поиск и Ответ (RAG)**
+2. **Search and Answer (RAG)**
    ```
    User Query
    → Embedding
@@ -154,28 +159,31 @@ curl -X POST http://localhost:8000/chat \
    → Answer
    ```
 
-## Конфигурация
+## Configuration
 
-Все параметры считываются из файла `.env`:
+All parameters are read from the `.env` file:
 
 ```env
-# Notion API токен (получить на https://www.notion.so/my-integrations)
+# Notion API token (get from https://www.notion.so/my-integrations)
 NOTION_TOKEN=ntp_xxx...
 
-# Anthropic API ключ (получить на https://console.anthropic.com/)
+# Anthropic API key (get from https://console.anthropic.com/)
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Путь к хранилищу ChromaDB (опционально)
+# Path to ChromaDB storage (optional)
 CHROMA_PATH=./storage/chroma
+
+# HuggingFace token for faster model loading (optional)
+HF_TOKEN=
 ```
 
 ## Troubleshooting
 
-### ChromaDB не подключается
-- Проверьте, что директория `./storage/chroma` существует и доступна для записи
-- Убедитесь, что `CHROMA_PATH` в `.env` указывает на правильный путь
+### ChromaDB connection fails
+- Ensure that the `./storage/chroma` directory exists and is writable
+- Make sure `CHROMA_PATH` in `.env` points to the correct path
 
-### Ошибки с Notion API
-- Проверьте, что `NOTION_TOKEN` корректен
-- Убедитесь, что MCP сервер Notion установлен (`npm install -g @notionhq/notion-mcp-server`)
-- Проверьте права доступа интеграции в Notion workspace
+### Notion API errors
+- Verify that `NOTION_TOKEN` is correct
+- Ensure the Notion MCP server is installed (`npm install -g @notionhq/notion-mcp-server`)
+- Check that the integration has access permissions in your Notion workspace
