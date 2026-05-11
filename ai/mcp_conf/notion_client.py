@@ -37,13 +37,27 @@ class NotionMCPClient:
         })
     
     async def create_page(self, title: str, content: str, parent_id: str) -> str:
-        return await self._call('API-post-page"', {
-            'parent': {'page_id': parent_id},
-            'properties': {
-                'title': {
-                    'title': [{'text': {'content': title}}]
+        return await self._call("API-post-page", {
+            "parent": {"page_id": parent_id},
+            "properties": {
+                "title": {
+                    "title": [{"text": {"content": title}}]
                 }
-            }
+            },
+            "children": [
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": content}
+                            }
+                        ]
+                    }
+                }
+            ]
         })
 
 notion = NotionMCPClient()

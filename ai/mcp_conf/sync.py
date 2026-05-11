@@ -1,23 +1,25 @@
 import json
 import asyncio
-import chromadb
+import logging
 from config.settings import settings as cfg
-from mcp_conf.notion_client import notion
-from rag.indexer import index_documents
+from ai.mcp_conf.notion_client import notion
+from ai.rag.indexer import Indexer
+from ai.rag.retriever import Retriever
 
-async def sync_notion_to_rag(query: str = ""):
-    client = chromadb.PersistentClient(path=cfg.chroma_path)
-    client.delete_collection("notion_docs")
-    print("Chroma очищена")
+log = logging.getLogger(name=__name__)
+
+
+async def sync_notion_to_rag(retriever: Retriever, query: str = ""):
+    indexer = Indexer(retriever)
     
-    print("Fetching pages from Notion...")
+    log.info("Fetching pages from Notion...")
     raw = await notion.search(query)
 
     try:
         data = json.loads(raw)
         results = data.get('results', [])
     except Exception:
-        print('Ошибка парсинга Notion:', raw)
+        log.info('Ошибка парсинга Notion:', raw)
         return
     
     pages = []
@@ -28,31 +30,28 @@ async def sync_notion_to_rag(query: str = ""):
 
 
         if obj_type == "data_source":
-            print(f"  ⏭ Пропускаем БД: {title}")
+            log.info(f"  ⏭ Пропускаем БД: {title}")
             continue
 
-        try:
-            blocks_raw = await notion.get_page_content(page_id)
-            blocks_data = json.loads(blocks_raw)
-            block_results = blocks_data.get("results", [])
-
-            if block_results:
-                content = extract_text_from_blocks(block_results)
-            else:
-                content = extract_content_from_properties(item)
-        except Exception as e:
+        
+        blocks_raw = await notion.get_page_content(page_id)
+        blocks_data = json.loads(blocks_raw)
+        block_results = blocks_data.get("results", [])
+        if block_results:
+            content = extract_text_from_blocks(block_results)
+        else:
             content = extract_content_from_properties(item)
 
         if not content.strip():
-            print(f"  ⏭ Нет контента: {title} ({page_id})")
+            log.info(f"  ⏭ Нет контента: {title} ({page_id})")
             continue
 
         pages.append({"id": page_id, "title": title, "content": content})
-        print(f"  ✓ {title}")
+        log.info(f"  ✓ {title}")
 
-    print(f"Indexing {len(pages)} pages...")
-    index_documents(pages)
-    print("Sync complete.")
+    log.info(f"Indexing {len(pages)} pages...")
+    indexer.index_documents(pages)
+    log.info("Sync complete.")
 
 def extract_text_from_blocks(blocks: list) -> str:
     texts = []
@@ -108,4 +107,5 @@ def extract_content_from_properties(item: dict) -> str:
 
 
 if __name__ == "__main__":
+    retriever = Retriever()
     asyncio.run(sync_notion_to_rag())
